@@ -56,20 +56,20 @@ class MFCCExtractor(FeatureExtractor):
         Returns:
             mfcc: [batch, 1, n_mfcc, time_frames]
         """
-        # Handle different input shapes
+        # Ensure we have [batch, samples] format
         if waveform.dim() == 1:
-            waveform = waveform.unsqueeze(0).unsqueeze(0)  # [1, 1, samples]
-        elif waveform.dim() == 2:
-            waveform = waveform.unsqueeze(1)  # [batch, 1, samples]
+            waveform = waveform.unsqueeze(0)  # [1, samples]
+        elif waveform.dim() == 3:
+            # If we get [batch, 1, samples], squeeze out channel dim
+            waveform = waveform.squeeze(1)  # [batch, samples]
             
-        # Compute MFCC
+        # Compute MFCC - expects [batch, samples]
         mfcc = self.mfcc(waveform)  # [batch, n_mfcc, time]
         
-        # Add channel dimension for compatibility with CNNs
+        # Add channel dimension for CNN compatibility
         mfcc = mfcc.unsqueeze(1)  # [batch, 1, n_mfcc, time]
         
         return mfcc
-
 
 class MelSpectrogramExtractor(FeatureExtractor):
     """Extract log mel spectrogram features."""
@@ -105,18 +105,18 @@ class MelSpectrogramExtractor(FeatureExtractor):
         Returns:
             log_mel: [batch, 1, n_mels, time_frames]
         """
-        # Handle different input shapes
+        # Ensure we have [batch, samples] format
         if waveform.dim() == 1:
-            waveform = waveform.unsqueeze(0).unsqueeze(0)
-        elif waveform.dim() == 2:
-            waveform = waveform.unsqueeze(1)
+            waveform = waveform.unsqueeze(0)  # [1, samples]
+        elif waveform.dim() == 3:
+            waveform = waveform.squeeze(1)  # [batch, samples]
             
         # Compute mel spectrogram
         mel = self.mel_spec(waveform)
         log_mel = self.amplitude_to_db(mel)
         
         # Add channel dimension
-        log_mel = log_mel.unsqueeze(1)
+        log_mel = log_mel.unsqueeze(1)  # [batch, 1, n_mels, time]
         
         return log_mel
 
