@@ -1,0 +1,39 @@
+
+# Data pipeline configuration
+feature_extractor:
+  type: mfcc
+  mfcc_params:
+    n_mfcc: 40
+    n_fft: 400
+    hop_length: 160
+
+augmentation:
+  # Waveform augmentations
+  time_stretch:
+    enabled: true
+    min_rate: 0.9
+    max_rate: 1.1
+    prob: 0.5
+  
+  noise:
+    enabled: true
+    min_snr: 0.001
+    max_snr: 0.005
+    prob: 0.3
+  
+  # Spectrogram augmentations  
+  time_mask:
+    enabled: true
+    max_width: 30
+    prob: 0.5
+    
+  freq_mask:
+    enabled: true  
+    max_width: 10
+    prob: 0.5
+
+# Contrastive learning settings
+contrastive:
+  views_per_sample: 2
+  classes_per_batch: 8
+  samples_per_class: 2

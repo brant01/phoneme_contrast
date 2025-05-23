@@ -1,0 +1,49 @@
+
+# Data
+/data/
+!/data/README.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Experiments and outputs
+experiments/
+runs/
+outputs/
+logs/
+wandb/
+mlruns/
+*.log
+
+# Model files
+*.pt
+*.pth
+*.ckpt
+checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb

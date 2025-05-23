@@ -1,0 +1,30 @@
+
+defaults:
+  - _self_
+  - data: default
+  - model: cnn_small
+  - system: auto
+
+experiment:
+  name: phoneme_contrast
+  seed: 42
+  output_dir: ${hydra:runtime.output_dir}
+
+data:
+  data_path: data/raw/New Stimuli 9-8-2024
+  target_sr: 16000
+  max_length_ms: 2000
+
+model:
+  embedding_dim: 128
+
+training:
+  epochs: 100
+  learning_rate: 3e-4
+  temperature: 0.5
+
+logging:
+  level: info
+  wandb:
+    enabled: false
+    project: phoneme_contrast
