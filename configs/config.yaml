@@ -1,4 +1,4 @@
-
+# configs/config.yaml - Update with all parameters
 defaults:
   - _self_
   - data: default
@@ -14,14 +14,38 @@ data:
   data_path: data/raw/New Stimuli 9-8-2024
   target_sr: 16000
   max_length_ms: 2000
+  train_split: 0.8
 
 model:
+  type: phoneme_cnn
+  in_channels: 1
   embedding_dim: 128
+  use_attention: true
+  dropout_rate: 0.1
 
 training:
   epochs: 100
   learning_rate: 3e-4
-  temperature: 0.5
+  weight_decay: 1e-4
+  
+  # Loss configuration
+  loss:
+    type: supervised_contrastive
+    temperature: 0.5
+    
+  # System-dependent (set by system config or auto-adjust)
+  batch_size: 16
+  num_workers: 4
+  pin_memory: null
+  
+  # Training options
+  gradient_clip_val: 1.0
+  eval_every: 5
+  save_every: 10
+  
+  # Scheduler
+  use_scheduler: true
+  min_lr: 1e-6
 
 logging:
   level: info
