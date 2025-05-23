@@ -80,7 +80,7 @@ class PhonemeContrastiveDataset(Dataset):
             if self.mode == "train":
                 view_waveform = self._augment_waveform(
                     view_waveform, 
-                    seed=idx * 10000 + view_idx
+                    seed=int(idx * 10000 + view_idx)
                 )
             
             # Extract features (MFCC, mel-spec, etc.)
@@ -90,7 +90,7 @@ class PhonemeContrastiveDataset(Dataset):
             if self.mode == "train" and self.augmentation_pipeline is not None:
                 features = self.augmentation_pipeline(
                     features,
-                    seed=idx * 20000 + view_idx
+                    seed=int(idx * 20000 + view_idx)
                 )
             
             # Remove batch dimension, keep [C, H, W] format
@@ -136,10 +136,12 @@ class PhonemeContrastiveDataset(Dataset):
             self.waveform_cache[idx] = waveform.clone()
         
         return waveform
-    
+
     def _augment_waveform(self, waveform: torch.Tensor, seed: int) -> torch.Tensor:
         """Apply waveform-level augmentations."""
         # Set seed for reproducibility
+        # Convert to Python int in case it's numpy int
+        seed = int(seed)
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)

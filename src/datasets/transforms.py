@@ -22,6 +22,7 @@ class TimeMask(BaseTransform):
     
     def __call__(self, x: torch.Tensor, seed: Optional[int] = None) -> torch.Tensor:
         if seed is not None:
+            seed = int(seed)  # Convert to Python int
             random.seed(seed)
             torch.manual_seed(seed)
             
@@ -40,6 +41,7 @@ class FrequencyMask(BaseTransform):
     
     def __call__(self, x: torch.Tensor, seed: Optional[int] = None) -> torch.Tensor:
         if seed is not None:
+            seed = int(seed)  # Convert to Python int
             random.seed(seed)
             torch.manual_seed(seed)
             
@@ -58,6 +60,7 @@ class GaussianNoise(BaseTransform):
     
     def __call__(self, x: torch.Tensor, seed: Optional[int] = None) -> torch.Tensor:
         if seed is not None:
+            seed = int(seed)  # Convert to Python int
             random.seed(seed)
             torch.manual_seed(seed)
             
@@ -78,6 +81,7 @@ class TimeStretch(BaseTransform):
     
     def __call__(self, x: torch.Tensor, seed: Optional[int] = None) -> torch.Tensor:
         if seed is not None:
+            seed = int(seed)  # Convert to Python int
             random.seed(seed)
             torch.manual_seed(seed)
             

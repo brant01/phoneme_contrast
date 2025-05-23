@@ -1,0 +1,7 @@
+# configs/model/cnn_small.yaml
+# Small CNN model configuration
+type: phoneme_cnn
+in_channels: 1
+embedding_dim: 128
+use_attention: true
+dropout_rate: 0.1

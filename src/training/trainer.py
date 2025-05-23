@@ -12,6 +12,8 @@ import json
 import time
 from collections import defaultdict
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 
 class ContrastiveTrainer:
@@ -82,6 +84,11 @@ class ContrastiveTrainer:
             if self.val_loader and (epoch + 1) % self.config.get('eval_every', 1) == 0:
                 val_metrics = self._validate()
                 
+            # Classifier evaluation
+            if self.val_loader and (epoch + 1) % self.config.get('eval_classifier_every', 5) == 0:
+                classifier_metrics = self._evaluate_classifier(epoch + 1)
+                val_metrics.update(classifier_metrics)
+                
             # Learning rate scheduling
             if self.scheduler:
                 self.scheduler.step()
@@ -93,11 +100,23 @@ class ContrastiveTrainer:
             if (epoch + 1) % self.config.get('save_every', 10) == 0:
                 self._save_checkpoint('periodic')
                 
-            # Save best model
-            if val_metrics.get('loss', float('inf')) < self.best_val_loss:
-                self.best_val_loss = val_metrics['loss']
+            # Save best model based on validation loss or classifier accuracy
+            metric_for_best = val_metrics.get(self.config.get('best_metric', 'loss'), float('inf'))
+            is_best = False
+            
+            if self.config.get('best_metric', 'loss') == 'loss':
+                is_best = metric_for_best < self.best_val_loss
+                if is_best:
+                    self.best_val_loss = metric_for_best
+            else:  # For accuracy metrics, higher is better
+                is_best = metric_for_best > self.best_val_loss
+                if is_best:
+                    self.best_val_loss = metric_for_best
+                    
+            if is_best:
                 self._save_checkpoint('best')
-                
+                self.logger.info(f"New best model! {self.config.get('best_metric', 'loss')}: {metric_for_best:.4f}")
+            
         # Save final checkpoint
         self._save_checkpoint('final')
         self._save_metrics()
@@ -198,10 +217,14 @@ class ContrastiveTrainer:
         # Log to console
         log_str = f"Epoch {self.current_epoch + 1}"
         log_str += f" | Train Loss: {train_metrics['loss']:.4f}"
-        if val_metrics:
+        if 'loss' in val_metrics:
             log_str += f" | Val Loss: {val_metrics['loss']:.4f}"
+        if 'linear_accuracy' in val_metrics:
+            log_str += f" | Linear Acc: {val_metrics['linear_accuracy']:.3f}"
+        if 'rf_accuracy' in val_metrics:
+            log_str += f" | RF Acc: {val_metrics['rf_accuracy']:.3f}"
         log_str += f" | LR: {train_metrics['lr']:.6f}"
-        
+    
         self.logger.info(log_str)
         
     def _save_checkpoint(self, tag: str):
@@ -240,3 +263,56 @@ class ContrastiveTrainer:
         self.best_val_loss = checkpoint['best_val_loss']
         
         self.logger.info(f"Loaded checkpoint from epoch {self.current_epoch}")
+
+    def _evaluate_classifier(self, epoch: int) -> Dict[str, float]:
+        """Evaluate embeddings with simple classifiers."""
+        self.model.eval()
+        
+        # Collect embeddings from BOTH train and val for better evaluation
+        all_embeddings = []
+        all_labels = []
+        
+        with torch.no_grad():
+            # Get validation embeddings
+            for batch in self.val_loader:
+                views, batch_labels = self._prepare_batch(batch)
+                emb = self.model(views)
+                all_embeddings.append(emb.cpu())
+                all_labels.extend(batch_labels.cpu().tolist())
+                
+            # Also get training embeddings (without augmentation)
+            for batch in self.train_loader:
+                views, batch_labels = self._prepare_batch(batch)
+                # Use only first view to avoid augmentation effects
+                if views.dim() == 5:  # Has multiple views
+                    views = views[:, 0]  # Take first view only
+                emb = self.model(views)
+                all_embeddings.append(emb.cpu())
+                all_labels.extend(batch_labels.cpu().tolist())
+        
+        # Concatenate all embeddings
+        embeddings = torch.cat(all_embeddings, dim=0).numpy()
+        labels = np.array(all_labels)
+        
+        results = {}
+        
+        # Now we have ~126 samples, enough for evaluation
+        from sklearn.model_selection import cross_val_score
+        
+        # Linear classifier
+        try:
+            linear_clf = LogisticRegression(max_iter=1000, random_state=42)
+            linear_scores = cross_val_score(linear_clf, embeddings, labels, cv=5)
+            results['linear_accuracy'] = linear_scores.mean()
+        except Exception as e:
+            self.logger.warning(f"Linear classifier failed: {e}")
+        
+        # Random Forest
+        try:
+            rf_clf = RandomForestClassifier(n_estimators=100, random_state=42)
+            rf_scores = cross_val_score(rf_clf, embeddings, labels, cv=5)
+            results['rf_accuracy'] = rf_scores.mean()
+        except Exception as e:
+            self.logger.warning(f"Random Forest classifier failed: {e}")
+        
+        return results

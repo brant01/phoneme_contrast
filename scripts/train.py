@@ -5,6 +5,7 @@ from pathlib import Path
 import torch
 from torch.utils.data import DataLoader, random_split
 import logging
+import platform
 
 from src.datasets.parser import parse_dataset
 from src.datasets.dataset import PhonemeContrastiveDataset
@@ -68,6 +69,9 @@ def setup_data(cfg: DictConfig, logger: logging.Logger):
         shuffle=True
     )
     
+    # Determine number of workers (0 on Windows to avoid multiprocessing issues)
+    num_workers = cfg.training.num_workers if platform.system() != 'Windows' else 0
+
     # Create data loaders
     train_loader = DataLoader(
         train_dataset,
@@ -84,6 +88,19 @@ def setup_data(cfg: DictConfig, logger: logging.Logger):
         pin_memory=cfg.training.pin_memory
     )
     
+    logger = logging.getLogger("experiment_logger")
+    valid_classes = train_loader.batch_sampler.valid_classes  
+    total_phonemes = len(set(train_dataset.labels))
+    logger.info(f"Using {len(valid_classes)} out of {total_phonemes} phonemes in training")
+
+    excluded = set(train_dataset.labels) - set(valid_classes)
+    if excluded:
+        logger.warning(f"Excluded phonemes (insufficient samples): {sorted(excluded)}")
+        
+    logger.debug(f"Train batches: {len(train_loader)}")
+    logger.debug(f"Batch composition: {train_loader.batch_sampler.classes_per_batch} classes × {train_loader.batch_sampler.samples_per_class} samples × {train_loader.batch_sampler.views_per_sample} views = {cfg.training.batch_size} samples/batch")
+
+
     return train_loader, val_loader, len(label_map)
 
 

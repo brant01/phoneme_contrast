@@ -1,0 +1,6 @@
+# configs/system/auto.yaml
+# Auto-detect system settings
+training:
+  num_workers: 0  # Will be auto-adjusted
+  pin_memory: null  # Will be auto-adjusted
+  auto_batch_size: false
