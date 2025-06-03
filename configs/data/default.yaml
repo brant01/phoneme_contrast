@@ -34,6 +34,6 @@ augmentation:
 
 # Contrastive learning settings
 contrastive:
-  views_per_sample: 2
-  classes_per_batch: 4
-  samples_per_class: 3
+    views_per_sample: 2
+    classes_per_batch: 6  # Increase classes
+    samples_per_class: 2  # Reduce to 2 (minimum for contrastive)

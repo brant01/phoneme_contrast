@@ -1,0 +1,3 @@
+- training.learning_rate=0.0005
+- training.loss.temperature=0.03
+- training.epochs=200

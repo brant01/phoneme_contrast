@@ -1,0 +1,9 @@
+# configs/model/conformer_small.yaml
+# Lightweight Conformer for small dataset
+type: phoneme_conformer
+in_channels: 40
+embedding_dim: 128
+num_layers: 4
+num_heads: 4
+conv_kernel_size: 31
+dropout_rate: 0.1

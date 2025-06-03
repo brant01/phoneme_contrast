@@ -1,0 +1,9 @@
+# configs/model/cnn_deep.yaml
+# Deeper CNN with residual connections
+type: phoneme_cnn_deep
+in_channels: 1
+embedding_dim: 128
+use_attention: true
+dropout_rate: 0.2
+hidden_dims: [64, 128, 256, 512]  # Deeper architecture
+use_residual: true

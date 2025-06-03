@@ -1,0 +1,8 @@
+- model=cnn_small
+- training.loss.type=supervised_contrastive
+- training.loss.temperature=0.15
+- data.augmentation.noise.prob=0.5
+- training.learning_rate=0.0003
+- training.epochs=250
+- training.batch_size=16
+- data.train_split=0.85

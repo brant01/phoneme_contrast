@@ -1,0 +1,72 @@
+experiment:
+  name: phoneme_contrast
+  seed: 42
+  output_dir: ${hydra:runtime.output_dir}
+data:
+  data_path: data/raw/New Stimuli 9-8-2024
+  target_sr: 16000
+  max_length_ms: 2000
+  train_split: 0.85
+  feature_extractor:
+    type: mfcc
+    mfcc_params:
+      n_mfcc: 40
+      n_fft: 400
+      hop_length: 160
+  augmentation:
+    time_stretch:
+      enabled: true
+      min_rate: 0.9
+      max_rate: 1.1
+      prob: 0.5
+    noise:
+      enabled: true
+      min_snr: 0.001
+      max_snr: 0.005
+      prob: 0.5
+    time_mask:
+      enabled: true
+      max_width: 30
+      prob: 0.5
+    freq_mask:
+      enabled: true
+      max_width: 10
+      prob: 0.5
+  contrastive:
+    views_per_sample: 2
+    classes_per_batch: 4
+    samples_per_class: 3
+model:
+  type: phoneme_cnn_deep
+  in_channels: 1
+  embedding_dim: 128
+  use_attention: true
+  dropout_rate: 0.2
+  hidden_dims:
+  - 64
+  - 128
+  - 256
+  - 512
+  use_residual: true
+training:
+  epochs: 250
+  learning_rate: 0.0003
+  weight_decay: 0.0001
+  loss:
+    type: ntxent
+    temperature: 0.1
+  eval_every: 5
+  eval_classifier_every: 5
+  save_every: 10
+  best_metric: rf_accuracy
+  batch_size: 16
+  num_workers: 0
+  pin_memory: null
+  gradient_clip_val: 1.0
+  use_scheduler: true
+  min_lr: 1.0e-06
+logging:
+  level: info
+  wandb:
+    enabled: false
+    project: phoneme_contrast

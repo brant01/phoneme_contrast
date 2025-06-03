@@ -1,0 +1,8 @@
+# configs/model/tcn.yaml
+# Temporal Convolutional Network
+type: phoneme_tcn
+in_channels: 40  # MFCC features
+embedding_dim: 128
+num_channels: [64, 128, 256]
+kernel_size: 3
+dropout_rate: 0.2

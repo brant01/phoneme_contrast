@@ -66,8 +66,18 @@ def setup_data(cfg: DictConfig, logger: logging.Logger):
         classes_per_batch=cfg.data.contrastive.classes_per_batch,
         samples_per_class=cfg.data.contrastive.samples_per_class,
         views_per_sample=cfg.data.contrastive.views_per_sample,
-        shuffle=True
+        shuffle=True,
+        seed=cfg.experiment.seed,
+        min_samples_to_exclude=0  # Set to 0 to include ALL classes
     )
+
+    # Verify all classes are included
+    unique_train_classes = set(train_labels)
+    logger.info(f"Total unique classes in training: {len(unique_train_classes)}")
+    logger.info(f"Classes in sampler: {len(train_sampler.valid_classes)}")
+    logger.info(f"Classes per batch: {cfg.data.contrastive.classes_per_batch}")
+    logger.info(f"Samples per class: {cfg.data.contrastive.samples_per_class}")
+    logger.info(f"Total batches per epoch: {len(train_sampler)}")
     
     # Determine number of workers (0 on Windows to avoid multiprocessing issues)
     num_workers = cfg.training.num_workers if platform.system() != 'Windows' else 0
