@@ -3,9 +3,7 @@ from torch.utils.data import Sampler
 import numpy as np
 from typing import List, Iterator
 from collections import defaultdict
-import logging
-
-logger = logging.getLogger(__name__)
+from ..utils.logging import get_logger
 
 
 class ContrastiveBatchSampler(Sampler[List[int]]):
@@ -45,6 +43,7 @@ class ContrastiveBatchSampler(Sampler[List[int]]):
         
         # Report on class distribution
         class_counts = {label: len(indices) for label, indices in self.label_to_indices.items()}
+        logger = get_logger()
         logger.info(f"Class distribution: min={min(class_counts.values())}, max={max(class_counts.values())}")
         
         # Only filter if min_samples_to_exclude > 0

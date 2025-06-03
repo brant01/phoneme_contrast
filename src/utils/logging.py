@@ -44,3 +44,8 @@ def create_logger(
     logger.addHandler(console_handler)
 
     return logger
+
+
+def get_logger() -> logging.Logger:
+    """Get the main experiment logger instance."""
+    return logging.getLogger("experiment_logger")

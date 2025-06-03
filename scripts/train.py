@@ -98,7 +98,6 @@ def setup_data(cfg: DictConfig, logger: logging.Logger):
         pin_memory=cfg.training.pin_memory
     )
     
-    logger = logging.getLogger("experiment_logger")
     valid_classes = train_loader.batch_sampler.valid_classes  
     total_phonemes = len(set(train_dataset.labels))
     logger.info(f"Using {len(valid_classes)} out of {total_phonemes} phonemes in training")
