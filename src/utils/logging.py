@@ -1,5 +1,5 @@
-from pathlib import Path
 import logging
+from pathlib import Path
 from typing import Literal
 
 
@@ -21,6 +21,7 @@ def create_logger(
     logger = logging.getLogger("experiment_logger")
     logger.setLevel(logging.DEBUG)
     logger.handlers.clear()
+    logger.propagate = False  # Prevent propagation to root logger
 
     # Formatter
     formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s", "%Y-%m-%d %H:%M:%S")

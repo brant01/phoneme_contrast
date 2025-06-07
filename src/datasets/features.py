@@ -1,13 +1,14 @@
 # src/datasets/features.py
+from typing import Dict, Optional
+
 import torch
 import torch.nn as nn
 import torchaudio.transforms as T
-from typing import Dict, Optional, Union
 
 
 class FeatureExtractor(nn.Module):
     """Base class for feature extractors."""
-    
+
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
         """
         Args:
@@ -20,7 +21,7 @@ class FeatureExtractor(nn.Module):
 
 class MFCCExtractor(FeatureExtractor):
     """Extract MFCC features from waveform."""
-    
+
     def __init__(
         self,
         sample_rate: int = 16000,
@@ -29,26 +30,26 @@ class MFCCExtractor(FeatureExtractor):
         hop_length: int = 160,
         n_mels: int = 80,
         f_min: float = 0.0,
-        f_max: Optional[float] = None
+        f_max: Optional[float] = None,
     ):
         super().__init__()
-        
+
         self.sample_rate = sample_rate
         self.n_mfcc = n_mfcc
-        
+
         # Create MFCC transform
         self.mfcc = T.MFCC(
             sample_rate=sample_rate,
             n_mfcc=n_mfcc,
             melkwargs={
-                'n_fft': n_fft,
-                'hop_length': hop_length,
-                'n_mels': n_mels,
-                'f_min': f_min,
-                'f_max': f_max or sample_rate / 2
-            }
+                "n_fft": n_fft,
+                "hop_length": hop_length,
+                "n_mels": n_mels,
+                "f_min": f_min,
+                "f_max": f_max or sample_rate / 2,
+            },
         )
-        
+
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
         """
         Args:
@@ -62,18 +63,19 @@ class MFCCExtractor(FeatureExtractor):
         elif waveform.dim() == 3:
             # If we get [batch, 1, samples], squeeze out channel dim
             waveform = waveform.squeeze(1)  # [batch, samples]
-            
+
         # Compute MFCC - expects [batch, samples]
         mfcc = self.mfcc(waveform)  # [batch, n_mfcc, time]
-        
+
         # Add channel dimension for CNN compatibility
         mfcc = mfcc.unsqueeze(1)  # [batch, 1, n_mfcc, time]
-        
+
         return mfcc
+
 
 class MelSpectrogramExtractor(FeatureExtractor):
     """Extract log mel spectrogram features."""
-    
+
     def __init__(
         self,
         sample_rate: int = 16000,
@@ -81,23 +83,23 @@ class MelSpectrogramExtractor(FeatureExtractor):
         hop_length: int = 160,
         n_mels: int = 80,
         f_min: float = 0.0,
-        f_max: Optional[float] = None
+        f_max: Optional[float] = None,
     ):
         super().__init__()
-        
+
         self.sample_rate = sample_rate
-        
+
         self.mel_spec = T.MelSpectrogram(
             sample_rate=sample_rate,
             n_fft=n_fft,
             hop_length=hop_length,
             n_mels=n_mels,
             f_min=f_min,
-            f_max=f_max or sample_rate / 2
+            f_max=f_max or sample_rate / 2,
         )
-        
+
         self.amplitude_to_db = T.AmplitudeToDB()
-        
+
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
         """
         Args:
@@ -110,22 +112,22 @@ class MelSpectrogramExtractor(FeatureExtractor):
             waveform = waveform.unsqueeze(0)  # [1, samples]
         elif waveform.dim() == 3:
             waveform = waveform.squeeze(1)  # [batch, samples]
-            
+
         # Compute mel spectrogram
         mel = self.mel_spec(waveform)
         log_mel = self.amplitude_to_db(mel)
-        
+
         # Add channel dimension
         log_mel = log_mel.unsqueeze(1)  # [batch, 1, n_mels, time]
-        
+
         return log_mel
 
 
 def build_feature_extractor(config: Dict) -> FeatureExtractor:
     """Build feature extractor from config."""
-    
+
     extractor_type = config.get("type", "mfcc")
-    
+
     if extractor_type == "mfcc":
         params = config.get("mfcc_params", {})
         return MFCCExtractor(**params)

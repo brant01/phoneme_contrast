@@ -48,5 +48,17 @@ Thumbs.db
 .ipynb_checkpoints/
 *.ipynb
 
-# Claud
+# Additional data files per CLAUDE.md
+*.csv
+*.txt
+*.wav
+*.rhs
+*.pkl
+*.npy
+*.h5
+
+# Project meta
+claude.md
 CLAUDE.md
+.env
+configs/local/

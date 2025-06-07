@@ -1,5 +1,6 @@
 # configs/model/conformer_small.yaml
 # Lightweight Conformer for small dataset
+# TODO: Model implementation pending
 type: phoneme_conformer
 in_channels: 40
 embedding_dim: 128

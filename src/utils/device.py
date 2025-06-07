@@ -1,12 +1,14 @@
-from typing import Optional, Literal
-import torch
-import platform
-import os
 import logging
+import os
+import platform
+from typing import Literal, Optional
+
+import torch
+
 
 def get_best_device(
     device_str: Literal["auto", "cuda", "mps", "cpu"] = "auto",
-    logger: Optional[logging.Logger] = None
+    logger: Optional[logging.Logger] = None,
 ) -> torch.device:
     """
     Determine the best device for computation.
@@ -45,7 +47,7 @@ def get_best_device(
 
         mac_version = platform.mac_ver()[0]
         if mac_version:
-            major_version = int(mac_version.split('.')[0])
+            major_version = int(mac_version.split(".")[0])
             if major_version < 13:
                 log_debug(f"macOS {mac_version} detected. MPS performs best on macOS 13+")
 
