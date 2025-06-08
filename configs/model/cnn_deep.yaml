@@ -1,6 +1,6 @@
 # configs/model/cnn_deep.yaml
 # Deeper CNN with residual connections
-type: phoneme_cnn
+type: phoneme_cnn_deep
 in_channels: 1
 embedding_dim: 128
 use_attention: true

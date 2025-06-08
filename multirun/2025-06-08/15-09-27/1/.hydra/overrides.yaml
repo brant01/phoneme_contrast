@@ -1,0 +1,6 @@
+- model=cnn_deep
+- training.epochs=300
+- training.batch_size=64
+- training.learning_rate=0.0003
+- training.loss.temperature=0.15
+- model.embedding_dim=128

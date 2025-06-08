@@ -8,15 +8,18 @@ This project implements a contrastive learning approach to train neural networks
 
 ## Key Results
 
-- **Best Performance**: 93.3% Random Forest accuracy on phoneme classification
-- **Linear Probe**: 47.3% accuracy (indicating non-linear embedding space)
+- **Best Performance**: 94.5% Random Forest accuracy on phoneme classification (achieved with cnn_small model)
+- **Linear Probe**: 44.8% accuracy (indicating non-linear embedding space)
 - **Speaker Invariance**: Model successfully groups phonemes regardless of speaker gender
 - **Phonetic Clustering**: Embeddings show linguistically meaningful confusion patterns
+- **Optimal Config**: batch_size=64, temperature=0.15, lr=0.0003, embedding_dim=128, augmentation_prob=0.5
 
 ## Architecture
 
 - **Data Pipeline**: WAV audio → resampling → MFCC/mel-spectrogram features → augmentation → contrastive views
-- **Model**: PhonemeNet CNN (3 conv blocks) with spatial attention → global pooling → L2-normalized embeddings  
+- **Models**: 
+  - **PhonemeNet** (cnn_small): Lightweight CNN (3 conv blocks) with spatial attention → global pooling → L2-normalized embeddings (304K params)
+  - **PhonemeNetDeep** (cnn_deep): Deep CNN with residual connections (4 blocks: 64→128→256→512 channels) and spatial attention (4.9M params)
 - **Loss**: Supervised contrastive loss (temperature=0.15) pulls same phonemes together, pushes different phonemes apart
 - **Evaluation**: Linear probe and Random Forest classifiers on frozen embeddings
 
@@ -50,13 +53,29 @@ uv run scripts/train.py
 uv run scripts/train.py \
   training.loss.temperature=0.15 \
   training.learning_rate=0.0003 \
+  training.batch_size=64 \
   model.embedding_dim=128 \
-  data.augmentation.noise.prob=0.5
+  data.augmentation.noise.prob=0.5 \
+  data.augmentation.time_stretch.prob=0.5 \
+  data.augmentation.time_mask.prob=0.5
+
+# Train deep model
+uv run scripts/train.py \
+  model=cnn_deep \
+  training.epochs=300 \
+  training.batch_size=64 \
+  training.learning_rate=0.0003
 
 # Multirun with parameter sweeps  
 uv run scripts/train.py -m \
   training.loss.temperature=0.1,0.15,0.2 \
   model.embedding_dim=64,128,256
+
+# Compare models (small vs deep)
+uv run scripts/train.py -m \
+  model=cnn_small,cnn_deep \
+  training.epochs=300 \
+  training.batch_size=64
 ```
 
 ### Evaluation
@@ -129,9 +148,10 @@ Based on extensive experiments, these hyperparameters work best:
 - **Temperature**: 0.15 (for supervised contrastive loss)
 - **Learning Rate**: 0.0003
 - **Embedding Dimension**: 128
-- **Batch Size**: 12 (6 classes × 2 samples)
-- **Noise Augmentation**: 0.5 probability
-- **Architecture**: CNN with spatial attention
+- **Batch Size**: 64 (outperforms 32 significantly)
+- **Augmentation Probabilities**: 0.5 for all types (noise, time_stretch, time_mask)
+- **Architecture**: CNN with spatial attention (cnn_small achieves best performance/efficiency tradeoff)
+- **Training Duration**: 300 epochs (model converges by ~250-300)
 
 ## Common Phoneme Confusions
 
