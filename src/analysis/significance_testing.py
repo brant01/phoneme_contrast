@@ -189,7 +189,7 @@ class SignificanceTester:
         return d
 
     def analyze_cross_validation_stability(
-        self, X: np.ndarray, y: np.ndarray, model, cv_folds: int = 10, n_repeats: int = 10
+        self, X: np.ndarray, y: np.ndarray, model, cv_folds: int = 10, n_repeats: int = 10, cv_splitter=None
     ) -> Dict[str, float]:
         """
         Analyze model stability across multiple CV runs.
@@ -198,8 +198,9 @@ class SignificanceTester:
             X: Feature matrix
             y: Labels
             model: Model to evaluate
-            cv_folds: Number of CV folds
+            cv_folds: Number of CV folds (ignored if cv_splitter provided)
             n_repeats: Number of times to repeat CV
+            cv_splitter: Optional custom CV splitter
 
         Returns:
             Dictionary with stability metrics
@@ -207,10 +208,20 @@ class SignificanceTester:
         accuracies = []
         per_class_accuracies = []
 
+        # Check if using LeaveOneOut
+        from sklearn.model_selection import LeaveOneOut
+        
+        if cv_splitter is not None and isinstance(cv_splitter, LeaveOneOut):
+            # LeaveOneOut doesn't support multiple repeats
+            n_repeats = 1
+            
         for repeat in range(n_repeats):
-            cv = StratifiedKFold(
-                n_splits=cv_folds, shuffle=True, random_state=self.random_state + repeat
-            )
+            if cv_splitter is not None:
+                cv = cv_splitter
+            else:
+                cv = StratifiedKFold(
+                    n_splits=cv_folds, shuffle=True, random_state=self.random_state + repeat
+                )
             y_pred = cross_val_predict(model, X, y, cv=cv)
 
             # Overall accuracy

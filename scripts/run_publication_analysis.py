@@ -118,9 +118,10 @@ def main():
     from sklearn.model_selection import train_test_split
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.svm import SVC
+    from fix_stratification import safe_train_test_split
     
-    X_train, X_test, y_train, y_test = train_test_split(
-        embeddings, labels, test_size=0.2, stratify=labels, random_state=42
+    X_train, X_test, y_train, y_test = safe_train_test_split(
+        embeddings, labels, test_size=0.2, random_state=42
     )
     
     # Test Random Forest
@@ -163,8 +164,10 @@ def main():
     all_results["mcnemar_rf_vs_svm"] = mcnemar_result
     
     # Cross-validation stability
+    from fix_stratification import get_cv_splitter
+    cv_splitter = get_cv_splitter(labels, n_splits=5)
     stability_results = significance_tester.analyze_cross_validation_stability(
-        embeddings, labels, rf_model, cv_folds=5, n_repeats=10
+        embeddings, labels, rf_model, cv_folds=5, n_repeats=10, cv_splitter=cv_splitter
     )
     logger.info(f"RF CV Stability: {stability_results['mean_accuracy']:.3f} ± {stability_results['std_accuracy']:.3f}")
     all_results["rf_stability"] = stability_results
@@ -383,8 +386,24 @@ Generated: {Path(__file__).name}
         f.write(report)
     
     # Save all results
+    # Convert numpy types to Python types for JSON serialization
+    def convert_numpy_types(obj):
+        if isinstance(obj, (np.integer, np.int64, np.int32)):
+            return int(obj)
+        elif isinstance(obj, (np.floating, np.float64, np.float32)):
+            return float(obj)
+        elif isinstance(obj, (np.bool_, bool)):
+            return bool(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, dict):
+            return {k: convert_numpy_types(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [convert_numpy_types(v) for v in obj]
+        return obj
+    
     with open(output_dir / "analysis_results.json", "w") as f:
-        json.dump(all_results, f, indent=2)
+        json.dump(convert_numpy_types(all_results), f, indent=2)
     
     logger.info(f"\n✓ Analysis complete! Results saved to: {output_dir}")
     logger.info("\nNext steps:")
