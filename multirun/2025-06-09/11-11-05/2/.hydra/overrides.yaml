@@ -1,0 +1,10 @@
+- model=cnn_small
+- model.embedding_dim=128
+- training.loss.temperature=0.12
+- training.learning_rate=0.0003
+- training.epochs=800
+- training.batch_size=128
+- data.augmentation.noise.prob=0.5
+- data.augmentation.time_stretch.prob=0.5
+- data.contrastive.classes_per_batch=8
+- data.contrastive.samples_per_class=4
