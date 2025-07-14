@@ -1,0 +1,11 @@
+# Abstract
+
+**Background:** Phoneme classification in speech recognition systems requires models that can distinguish between phonetic units while remaining invariant to speaker characteristics. Traditional approaches often focus on architectural complexity, but the relative contributions of feature engineering versus model complexity remain underexplored, particularly for small datasets typical in phonetic research.
+
+**Methods:** We conducted a systematic comparison of feature engineering versus architectural complexity for phoneme classification using Temporal Convolutional Networks (TCNs). We evaluated three approaches: (1) baseline TCN with 40 MFCC features, (2) enhanced architecture TCN with increased model complexity (4 layers, 2.86M parameters), and (3) enhanced features TCN using delta and delta-delta temporal features (60 MFCC + Δ + ΔΔ = 180 dimensions). Statistical significance was assessed using t-tests, effect size analysis (Cohen's d), and bootstrap confidence intervals across multiple random seeds.
+
+**Results:** Enhanced features significantly outperformed both baseline and complex architecture approaches. The enhanced features TCN achieved 95.1% ± 0.4% Random Forest accuracy compared to 85.9% ± 1.3% for baseline (p < 0.000002, Cohen's d = 7.61). Notably, increased architectural complexity hurt performance (-3.0%), demonstrating overfitting on the small dataset (126 samples, 38 phonemes). Ablation studies confirmed that delta and delta-delta features drove the 9.2% improvement, not increased model capacity.
+
+**Conclusions:** For small-scale phoneme classification tasks, systematic feature engineering provides statistically significant and practically meaningful improvements over architectural complexity. Delta and delta-delta features capture essential temporal dynamics for phoneme discrimination, while complex architectures lead to overfitting. These findings have important implications for speech recognition system design, particularly in low-resource scenarios common in phonetic research.
+
+**Keywords:** phoneme classification, temporal convolutional networks, feature engineering, delta features, statistical significance, speech recognition

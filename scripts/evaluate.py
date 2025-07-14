@@ -13,7 +13,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from tqdm import tqdm
 
-from src.datasets.dataset import PhonemeContrastiveDataset
+from src.datasets import PhonemeContrastiveDataset
 from src.datasets.features import build_feature_extractor
 from src.datasets.parser import parse_dataset
 from src.models import model_registry

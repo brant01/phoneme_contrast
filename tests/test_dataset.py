@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 import torch
 
-from src.datasets.dataset import PhonemeContrastiveDataset
+from src.datasets import PhonemeContrastiveDataset
 from src.datasets.features import MFCCExtractor
 from src.datasets.parser import parse_dataset
 from src.datasets.transforms import build_augmentation_pipeline

@@ -9,18 +9,18 @@ Provides traditional baselines to compare against the contrastive learning appro
 """
 
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
+import torch
+import torchaudio
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
-import torch
-import torchaudio
 
 
 class BaselineComparison:
@@ -72,7 +72,7 @@ class BaselineComparison:
 
             # Calculate statistics over time
             features = []
-            
+
             # Mean and std of each coefficient
             features.extend(mfcc.mean(dim=-1).squeeze().numpy())
             features.extend(mfcc.std(dim=-1).squeeze().numpy())
@@ -128,7 +128,7 @@ class BaselineComparison:
             )
             magnitudes = torch.abs(spec)
             freqs = torch.linspace(0, sample_rate / 2, magnitudes.size(0))
-            
+
             # Spectral centroid
             centroid = (freqs.unsqueeze(1) * magnitudes).sum(0) / (magnitudes.sum(0) + 1e-10)
             features.extend([centroid.mean().item(), centroid.std().item()])
@@ -154,7 +154,7 @@ class BaselineComparison:
             features.append(zcr.item())
 
             # RMS energy
-            rms = torch.sqrt(torch.mean(waveform ** 2))
+            rms = torch.sqrt(torch.mean(waveform**2))
             features.append(rms.item())
 
             all_features.append(features)
@@ -171,29 +171,37 @@ class BaselineComparison:
         pipelines = {}
 
         # 1. SVM with RBF kernel
-        pipelines["svm_rbf"] = Pipeline([
-            ("scaler", StandardScaler()),
-            ("svm", SVC(kernel="rbf", random_state=self.random_state)),
-        ])
+        pipelines["svm_rbf"] = Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                ("svm", SVC(kernel="rbf", random_state=self.random_state)),
+            ]
+        )
 
         # 2. Linear SVM
-        pipelines["svm_linear"] = Pipeline([
-            ("scaler", StandardScaler()),
-            ("svm", SVC(kernel="linear", random_state=self.random_state)),
-        ])
+        pipelines["svm_linear"] = Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                ("svm", SVC(kernel="linear", random_state=self.random_state)),
+            ]
+        )
 
         # 3. Random Forest
-        pipelines["random_forest"] = Pipeline([
-            ("scaler", StandardScaler()),
-            ("rf", RandomForestClassifier(n_estimators=100, random_state=self.random_state)),
-        ])
+        pipelines["random_forest"] = Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                ("rf", RandomForestClassifier(n_estimators=100, random_state=self.random_state)),
+            ]
+        )
 
         # 4. SVM with PCA
-        pipelines["pca_svm"] = Pipeline([
-            ("scaler", StandardScaler()),
-            ("pca", PCA(n_components=0.95)),  # Keep 95% variance
-            ("svm", SVC(kernel="rbf", random_state=self.random_state)),
-        ])
+        pipelines["pca_svm"] = Pipeline(
+            [
+                ("scaler", StandardScaler()),
+                ("pca", PCA(n_components=0.95)),  # Keep 95% variance
+                ("svm", SVC(kernel="rbf", random_state=self.random_state)),
+            ]
+        )
 
         return pipelines
 
@@ -283,9 +291,7 @@ class BaselineComparison:
 
             if tune_hyperparameters and model_name in ["svm_rbf", "svm_linear"]:
                 # Tune only SVM models (faster)
-                model, best_params = self.tune_baseline_model(
-                    X_train, y_train, model_name
-                )
+                model, best_params = self.tune_baseline_model(X_train, y_train, model_name)
                 self.logger.info(f"Best params for {model_name}: {best_params}")
             else:
                 model = pipeline
@@ -370,12 +376,14 @@ class BaselineComparison:
         # Use linear SVM for all comparisons
         for feature_name, (X_train, X_test) in feature_sets.items():
             self.logger.info(f"Evaluating {feature_name} features...")
-            
+
             # Train model
-            model = Pipeline([
-                ("scaler", StandardScaler()),
-                ("svm", SVC(kernel="linear", random_state=self.random_state)),
-            ])
+            model = Pipeline(
+                [
+                    ("scaler", StandardScaler()),
+                    ("svm", SVC(kernel="linear", random_state=self.random_state)),
+                ]
+            )
             model.fit(X_train, y_train)
 
             # Evaluate
@@ -434,16 +442,20 @@ class BaselineComparison:
             report += f"| {model_name} | {test_acc:.3f} | {cv_mean:.3f}±{cv_std:.3f} | {train_acc:.3f} |\n"
 
         # Best baseline vs contrastive
-        best_baseline = sorted_models[0] if sorted_models[0][0] != "contrastive_learning" else sorted_models[1]
-        
-        report += f"\n### Key Findings\n\n"
+        best_baseline = (
+            sorted_models[0] if sorted_models[0][0] != "contrastive_learning" else sorted_models[1]
+        )
+
+        report += "\n### Key Findings\n\n"
         report += f"- Best baseline: {best_baseline[0]} ({best_baseline[1]['test_accuracy']:.3f})\n"
         report += f"- Contrastive learning: {contrastive_results.get('test_accuracy', 0):.3f}\n"
-        
+
         improvement = (
-            contrastive_results.get("test_accuracy", 0) - best_baseline[1]["test_accuracy"]
-        ) / best_baseline[1]["test_accuracy"] * 100
-        
+            (contrastive_results.get("test_accuracy", 0) - best_baseline[1]["test_accuracy"])
+            / best_baseline[1]["test_accuracy"]
+            * 100
+        )
+
         report += f"- Relative improvement: {improvement:+.1f}%\n"
 
         return report

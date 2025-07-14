@@ -1,0 +1,71 @@
+{
+  "experiments": {
+    "baseline_tcn": {
+      "rf_accuracy": [
+        0.859,
+        0.89,
+        0.851,
+        0.865,
+        0.872
+      ],
+      "linear_accuracy": [
+        0.497,
+        0.51,
+        0.485,
+        0.492,
+        0.505
+      ],
+      "name": "Baseline TCN (40 MFCC)"
+    },
+    "enhanced_features": {
+      "rf_accuracy": [
+        0.951,
+        0.957,
+        0.948,
+        0.953,
+        0.945
+      ],
+      "linear_accuracy": [
+        0.736,
+        0.742,
+        0.73,
+        0.738,
+        0.725
+      ],
+      "name": "Enhanced Features TCN (60+\u0394+\u0394\u0394)"
+    }
+  },
+  "statistical_tests": {
+    "rf_ttest": {
+      "statistic": 12.025233345188628,
+      "p_value": 2.109817955189807e-06
+    },
+    "linear_ttest": {
+      "statistic": 43.913523150937785,
+      "p_value": 7.979191966765886e-11
+    }
+  },
+  "effect_sizes": {
+    "rf_cohens_d": 7.605425353160373,
+    "linear_cohens_d": 27.773350647899495
+  },
+  "confidence_intervals": {
+    "baseline_rf_95ci": [
+      0.856995,
+      0.8788
+    ],
+    "enhanced_rf_95ci": [
+      0.9474,
+      0.9544
+    ],
+    "baseline_linear_95ci": [
+      0.4902,
+      0.5054000000000001
+    ],
+    "enhanced_linear_95ci": [
+      0.7291949999999999,
+      0.7392000000000001
+    ]
+  },
+  "summary": {
+    "rf_significant": 

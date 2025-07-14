@@ -154,16 +154,14 @@ class ResidualBlock(nn.Module):
         dropout_rate: float = 0.1,
     ):
         super().__init__()
-        
+
         # Main path
-        self.conv1 = nn.Conv2d(
-            in_channels, out_channels, kernel_size=3, stride=stride, padding=1
-        )
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1)
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1)
         self.bn2 = nn.BatchNorm2d(out_channels)
         self.dropout = nn.Dropout2d(dropout_rate)
-        
+
         # Shortcut path
         self.shortcut = nn.Sequential()
         if stride != 1 or in_channels != out_channels:
@@ -178,11 +176,11 @@ class ResidualBlock(nn.Module):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.dropout(out)
         out = self.bn2(self.conv2(out))
-        
+
         # Add shortcut
         out += self.shortcut(x)
         out = F.relu(out)
-        
+
         return out
 
 
@@ -216,25 +214,25 @@ class PhonemeNetDeep(BaseModel):
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
         )
-        
+
         # Build residual blocks
         layers = []
         in_channels = self.hidden_dims[0]
-        
+
         for i, out_channels in enumerate(self.hidden_dims):
             # Determine stride (downsample every other layer except first)
             stride = 1 if i == 0 else 2
-            
+
             # Add residual block
             if self.use_residual:
-                layers.append(
-                    ResidualBlock(in_channels, out_channels, stride, self.dropout_rate)
-                )
+                layers.append(ResidualBlock(in_channels, out_channels, stride, self.dropout_rate))
             else:
                 # Non-residual block
                 layers.append(
                     nn.Sequential(
-                        nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1),
+                        nn.Conv2d(
+                            in_channels, out_channels, kernel_size=3, stride=stride, padding=1
+                        ),
                         nn.BatchNorm2d(out_channels),
                         nn.ReLU(inplace=True),
                         nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
@@ -243,15 +241,15 @@ class PhonemeNetDeep(BaseModel):
                         nn.Dropout2d(self.dropout_rate),
                     )
                 )
-            
+
             in_channels = out_channels
-        
+
         self.conv_blocks = nn.Sequential(*layers)
-        
+
         # Attention mechanism
         if self.use_attention:
             self.attention = SpatialAttention(self.hidden_dims[-1])
-        
+
         # Global pooling and projection
         self.global_pool = nn.AdaptiveAvgPool2d(1)
         self.projection = nn.Sequential(
@@ -285,22 +283,22 @@ class PhonemeNetDeep(BaseModel):
         """
         # Initial convolution
         x = self.init_conv(x)
-        
+
         # Pass through residual blocks
         x = self.conv_blocks(x)
-        
+
         # Apply attention if enabled
         if self.use_attention:
             x = self.attention(x)
-        
+
         # Global pooling
         x = self.global_pool(x)
         x = x.view(x.size(0), -1)
-        
+
         # Project to embedding space
         x = self.projection(x)
-        
+
         # L2 normalize for contrastive learning
         x = F.normalize(x, p=2, dim=1)
-        
+
         return x

@@ -9,7 +9,9 @@ and publication-quality visualizations.
 
 import argparse
 import json
-import logging
+
+# Add project root to path
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -20,8 +22,6 @@ import torchaudio
 import yaml
 from sklearn.model_selection import train_test_split
 
-# Add project root to path
-import sys
 sys.path.append(str(Path(__file__).parent.parent))
 
 from src.analysis import (
@@ -62,7 +62,7 @@ class PublicationAnalysisPipeline:
 
         # Setup logging
         self.logger = create_logger(self.output_dir / "logs", "publication_analysis")
-        
+
         # Initialize analysis modules
         self.significance_tester = SignificanceTester()
         self.speaker_analyzer = SpeakerInvarianceAnalyzer()
@@ -72,7 +72,7 @@ class PublicationAnalysisPipeline:
 
         # Load checkpoint and config
         self.checkpoint = torch.load(checkpoint_path, map_location="cpu")
-        
+
         if config_path:
             with open(config_path, "r") as f:
                 self.config = yaml.safe_load(f)
@@ -81,7 +81,9 @@ class PublicationAnalysisPipeline:
 
         self.logger.info(f"Loaded checkpoint from: {checkpoint_path}")
 
-    def load_model_and_data(self) -> Tuple[torch.nn.Module, np.ndarray, np.ndarray, List[str], Dict]:
+    def load_model_and_data(
+        self,
+    ) -> Tuple[torch.nn.Module, np.ndarray, np.ndarray, List[str], Dict]:
         """
         Load the trained model and extract embeddings from the dataset.
 
@@ -109,11 +111,11 @@ class PublicationAnalysisPipeline:
             for i, (file_path, label) in enumerate(zip(file_paths, labels)):
                 # Load and process audio (simplified - you'd use your feature extractor)
                 waveform, sr = torchaudio.load(str(file_path))
-                
+
                 # Process through model (placeholder - use your actual preprocessing)
                 # This should match your training preprocessing exactly
                 embedding = model(waveform.unsqueeze(0))
-                
+
                 embeddings.append(embedding.cpu().numpy())
                 phoneme_names.append([k for k, v in label_map.items() if v == label][0])
                 all_metadata.append(metadata[i])
@@ -122,14 +124,11 @@ class PublicationAnalysisPipeline:
         labels = np.array(labels)
 
         self.logger.info(f"Extracted {len(embeddings)} embeddings")
-        
+
         return model, embeddings, labels, phoneme_names, all_metadata
 
     def run_statistical_tests(
-        self,
-        embeddings: np.ndarray,
-        labels: np.ndarray,
-        save_results: bool = True
+        self, embeddings: np.ndarray, labels: np.ndarray, save_results: bool = True
     ) -> Dict[str, any]:
         """
         Run comprehensive statistical tests.
@@ -147,8 +146,8 @@ class PublicationAnalysisPipeline:
 
         # 1. Bootstrap confidence intervals for main metrics
         from sklearn.ensemble import RandomForestClassifier
-        from sklearn.svm import SVC
         from sklearn.model_selection import train_test_split
+        from sklearn.svm import SVC
 
         X_train, X_test, y_train, y_test = train_test_split(
             embeddings, labels, test_size=0.2, stratify=labels, random_state=42
@@ -158,7 +157,7 @@ class PublicationAnalysisPipeline:
         rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
         rf_model.fit(X_train, y_train)
         rf_pred = rf_model.predict(X_test)
-        
+
         rf_acc, rf_lower, rf_upper = self.significance_tester.bootstrap_confidence_interval(
             y_test, rf_pred
         )
@@ -172,7 +171,7 @@ class PublicationAnalysisPipeline:
         svm_model = SVC(kernel="linear", random_state=42)
         svm_model.fit(X_train, y_train)
         svm_pred = svm_model.predict(X_test)
-        
+
         svm_acc, svm_lower, svm_upper = self.significance_tester.bootstrap_confidence_interval(
             y_test, svm_pred
         )
@@ -195,9 +194,7 @@ class PublicationAnalysisPipeline:
         # 4. Effect sizes
         rf_scores = [rf_acc] * 10  # Placeholder - would get from CV
         svm_scores = [svm_acc] * 10
-        effect_size = self.significance_tester.cohens_d(
-            np.array(rf_scores), np.array(svm_scores)
-        )
+        effect_size = self.significance_tester.cohens_d(np.array(rf_scores), np.array(svm_scores))
         results["effect_size_rf_vs_svm"] = effect_size
 
         if save_results:
@@ -212,7 +209,7 @@ class PublicationAnalysisPipeline:
         embeddings: np.ndarray,
         labels: np.ndarray,
         metadata: List[Dict],
-        save_results: bool = True
+        save_results: bool = True,
     ) -> Dict[str, any]:
         """
         Analyze speaker invariance of embeddings.
@@ -227,13 +224,11 @@ class PublicationAnalysisPipeline:
             Dictionary with invariance analysis results
         """
         self.logger.info("Running speaker invariance analysis...")
-        
+
         # Extract gender labels
         gender_map = {"male": 0, "female": 1}
-        gender_labels = np.array([
-            gender_map.get(m.get("gender", "unknown"), -1) for m in metadata
-        ])
-        
+        gender_labels = np.array([gender_map.get(m.get("gender", "unknown"), -1) for m in metadata])
+
         # Filter out unknown genders
         valid_mask = gender_labels >= 0
         embeddings_valid = embeddings[valid_mask]
@@ -242,7 +237,7 @@ class PublicationAnalysisPipeline:
 
         # Run analyses
         results = {}
-        
+
         # 1. Gender invariance
         gender_results = self.speaker_analyzer.analyze_gender_invariance(
             embeddings_valid, labels_valid, gender_labels_valid
@@ -270,10 +265,7 @@ class PublicationAnalysisPipeline:
         return results
 
     def run_phonetic_feature_analysis(
-        self,
-        embeddings: np.ndarray,
-        phoneme_names: List[str],
-        save_results: bool = True
+        self, embeddings: np.ndarray, phoneme_names: List[str], save_results: bool = True
     ) -> Dict[str, any]:
         """
         Analyze phonetic feature organization.
@@ -287,7 +279,7 @@ class PublicationAnalysisPipeline:
             Dictionary with phonetic analysis results
         """
         self.logger.info("Running phonetic feature analysis...")
-        
+
         results = {}
 
         # 1. Feature clustering
@@ -346,10 +338,7 @@ class PublicationAnalysisPipeline:
         return results
 
     def run_baseline_comparisons(
-        self,
-        waveforms: List[torch.Tensor],
-        labels: np.ndarray,
-        save_results: bool = True
+        self, waveforms: List[torch.Tensor], labels: np.ndarray, save_results: bool = True
     ) -> Dict[str, any]:
         """
         Compare against traditional baselines.
@@ -363,7 +352,7 @@ class PublicationAnalysisPipeline:
             Dictionary with baseline comparison results
         """
         self.logger.info("Running baseline comparisons...")
-        
+
         # Split data
         indices = np.arange(len(labels))
         train_idx, test_idx = train_test_split(
@@ -431,60 +420,55 @@ class PublicationAnalysisPipeline:
             analysis_results: Results from all analyses
         """
         self.logger.info("Creating publication figures...")
-        
+
         figures_dir = self.output_dir / "figures"
         figures_dir.mkdir(exist_ok=True)
 
         # 1. t-SNE visualization with phonetic features
         from sklearn.manifold import TSNE
-        
+
         tsne = TSNE(n_components=2, random_state=42, metric="cosine")
         embeddings_2d = tsne.fit_transform(embeddings)
-        
+
         # Group by manner of articulation
         manner_groups = {
             "Stops": PhoneticFeatureAnalyzer.PHONETIC_FEATURES["stop"],
             "Fricatives": PhoneticFeatureAnalyzer.PHONETIC_FEATURES["fricative"],
         }
-        
+
         fig1 = self.visualizer.plot_embedding_space(
-            embeddings_2d, labels, phoneme_names,
+            embeddings_2d,
+            labels,
+            phoneme_names,
             feature_groups=manner_groups,
-            title="Phoneme Embeddings by Manner of Articulation"
+            title="Phoneme Embeddings by Manner of Articulation",
         )
-        self.visualizer.save_publication_figure(
-            fig1, str(figures_dir / "embeddings_manner")
-        )
+        self.visualizer.save_publication_figure(fig1, str(figures_dir / "embeddings_manner"))
 
         # 2. Model performance comparison
         if "baseline_models" in analysis_results:
             perf_data = {
                 **analysis_results["baseline_models"],
                 "contrastive_rf": {
-                    "test_accuracy": analysis_results.get("rf_confidence_interval", {}).get("accuracy", 0.93),
+                    "test_accuracy": analysis_results.get("rf_confidence_interval", {}).get(
+                        "accuracy", 0.93
+                    ),
                     "cv_accuracy_mean": 0.93,
                     "cv_accuracy_std": 0.02,
                 },
             }
-            
+
             fig2 = self.visualizer.plot_performance_comparison(
-                perf_data,
-                metric="test_accuracy",
-                title="Model Performance Comparison"
+                perf_data, metric="test_accuracy", title="Model Performance Comparison"
             )
-            self.visualizer.save_publication_figure(
-                fig2, str(figures_dir / "model_comparison")
-            )
+            self.visualizer.save_publication_figure(fig2, str(figures_dir / "model_comparison"))
 
         # 3. Speaker invariance results
         if "gender_invariance" in analysis_results:
             fig3 = self.visualizer.plot_speaker_invariance_results(
-                analysis_results["gender_invariance"],
-                title="Speaker Invariance Analysis"
+                analysis_results["gender_invariance"], title="Speaker Invariance Analysis"
             )
-            self.visualizer.save_publication_figure(
-                fig3, str(figures_dir / "speaker_invariance")
-            )
+            self.visualizer.save_publication_figure(fig3, str(figures_dir / "speaker_invariance"))
 
         # 4. Phonetic feature importance
         if "feature_clustering" in analysis_results:
@@ -492,14 +476,11 @@ class PublicationAnalysisPipeline:
                 feat: metrics.get("linear_separability", 0)
                 for feat, metrics in analysis_results["feature_clustering"].items()
             }
-            
+
             fig4 = self.visualizer.plot_feature_importance(
-                feature_scores,
-                title="Phonetic Feature Separability"
+                feature_scores, title="Phonetic Feature Separability"
             )
-            self.visualizer.save_publication_figure(
-                fig4, str(figures_dir / "feature_importance")
-            )
+            self.visualizer.save_publication_figure(fig4, str(figures_dir / "feature_importance"))
 
         # 5. Hierarchical clustering
         # Compute mean embeddings per phoneme
@@ -508,17 +489,13 @@ class PublicationAnalysisPipeline:
         for phoneme in unique_phonemes:
             mask = [p == phoneme for p in phoneme_names]
             mean_embeddings.append(embeddings[mask].mean(axis=0))
-        
-        fig5 = self.visualizer.plot_hierarchical_clustering(
-            np.array(mean_embeddings),
-            unique_phonemes,
-            title="Phoneme Hierarchical Clustering"
-        )
-        self.visualizer.save_publication_figure(
-            fig5, str(figures_dir / "hierarchical_clustering")
-        )
 
-        plt.close('all')  # Clean up
+        fig5 = self.visualizer.plot_hierarchical_clustering(
+            np.array(mean_embeddings), unique_phonemes, title="Phoneme Hierarchical Clustering"
+        )
+        self.visualizer.save_publication_figure(fig5, str(figures_dir / "hierarchical_clustering"))
+
+        plt.close("all")  # Clean up
         self.logger.info("All figures created")
 
     def generate_final_report(self, all_results: Dict[str, any]) -> None:
@@ -549,8 +526,7 @@ and comparisons with traditional baseline methods.
 
         if "baseline_models" in all_results:
             best_baseline = max(
-                all_results["baseline_models"].items(),
-                key=lambda x: x[1].get("test_accuracy", 0)
+                all_results["baseline_models"].items(), key=lambda x: x[1].get("test_accuracy", 0)
             )
             report += f"- **Best Baseline ({best_baseline[0]})**: {best_baseline[1]['test_accuracy']:.3f}\n"
 
@@ -561,7 +537,7 @@ and comparisons with traditional baseline methods.
         if "gender_invariance" in all_results:
             gender_inv = all_results["gender_invariance"]
             report += f"- Gender classification accuracy: {gender_inv.get('gender_classification_accuracy', 0):.3f} "
-            report += f"(lower is better, chance = 0.5)\n"
+            report += "(lower is better, chance = 0.5)\n"
             report += f"- Cross-gender transfer accuracy: {gender_inv.get('cross_gender_accuracy_mean', 0):.3f}\n"
 
         report += """
@@ -575,7 +551,7 @@ and comparisons with traditional baseline methods.
                 for feat, metrics in all_results["feature_clustering"].items()
             ]
             feature_scores.sort(key=lambda x: x[1], reverse=True)
-            
+
             report += "Best organized features (by linear separability):\n"
             for feat, score in feature_scores[:5]:
                 report += f"- {feat}: {score:.3f}\n"
@@ -609,84 +585,59 @@ and comparisons with traditional baseline methods.
         # Save report
         with open(self.output_dir / "final_analysis_report.md", "w") as f:
             f.write(report)
-        
+
         self.logger.info("Final report generated")
 
     def run_full_analysis(self) -> None:
         """Run the complete analysis pipeline."""
         self.logger.info("Starting comprehensive analysis pipeline...")
-        
+
         # Load model and data
         model, embeddings, labels, phoneme_names, metadata = self.load_model_and_data()
-        
+
         # Placeholder for waveforms - in practice, you'd load these
         waveforms = [torch.randn(1, 16000) for _ in range(len(labels))]
-        
+
         all_results = {}
-        
+
         # Run all analyses
         stat_results = self.run_statistical_tests(embeddings, labels)
         all_results.update(stat_results)
-        
-        speaker_results = self.run_speaker_invariance_analysis(
-            embeddings, labels, metadata
-        )
+
+        speaker_results = self.run_speaker_invariance_analysis(embeddings, labels, metadata)
         all_results.update(speaker_results)
-        
-        phonetic_results = self.run_phonetic_feature_analysis(
-            embeddings, phoneme_names
-        )
+
+        phonetic_results = self.run_phonetic_feature_analysis(embeddings, phoneme_names)
         all_results.update(phonetic_results)
-        
+
         baseline_results = self.run_baseline_comparisons(waveforms, labels)
         all_results.update(baseline_results)
-        
+
         # Create visualizations
-        self.create_publication_figures(
-            embeddings, labels, phoneme_names, all_results
-        )
-        
+        self.create_publication_figures(embeddings, labels, phoneme_names, all_results)
+
         # Generate final report
         self.generate_final_report(all_results)
-        
+
         self.logger.info(f"Analysis complete! Results saved to: {self.output_dir}")
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Run comprehensive publication analysis"
+    parser = argparse.ArgumentParser(description="Run comprehensive publication analysis")
+    parser.add_argument("checkpoint_path", type=Path, help="Path to model checkpoint")
+    parser.add_argument(
+        "--data-path", type=Path, default="data/raw/New Stimuli 9-8-2024", help="Path to dataset"
     )
     parser.add_argument(
-        "checkpoint_path",
-        type=Path,
-        help="Path to model checkpoint"
+        "--output-dir", type=Path, default="publication_analysis", help="Output directory"
     )
-    parser.add_argument(
-        "--data-path",
-        type=Path,
-        default="data/raw/New Stimuli 9-8-2024",
-        help="Path to dataset"
-    )
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default="publication_analysis",
-        help="Output directory"
-    )
-    parser.add_argument(
-        "--config-path",
-        type=Path,
-        help="Optional config file path"
-    )
-    
+    parser.add_argument("--config-path", type=Path, help="Optional config file path")
+
     args = parser.parse_args()
-    
+
     # Run analysis
     pipeline = PublicationAnalysisPipeline(
-        args.checkpoint_path,
-        args.data_path,
-        args.output_dir,
-        args.config_path
+        args.checkpoint_path, args.data_path, args.output_dir, args.config_path
     )
     pipeline.run_full_analysis()
 

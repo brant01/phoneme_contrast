@@ -20,7 +20,7 @@ class FeatureExtractor(nn.Module):
 
 
 class MFCCExtractor(FeatureExtractor):
-    """Extract MFCC features from waveform."""
+    """Extract MFCC features from waveform with optional delta and delta-delta features."""
 
     def __init__(
         self,
@@ -31,11 +31,15 @@ class MFCCExtractor(FeatureExtractor):
         n_mels: int = 80,
         f_min: float = 0.0,
         f_max: Optional[float] = None,
+        add_delta: bool = False,
+        add_delta_delta: bool = False,
     ):
         super().__init__()
 
         self.sample_rate = sample_rate
         self.n_mfcc = n_mfcc
+        self.add_delta = add_delta
+        self.add_delta_delta = add_delta_delta
 
         # Create MFCC transform
         self.mfcc = T.MFCC(
@@ -50,12 +54,17 @@ class MFCCExtractor(FeatureExtractor):
             },
         )
 
+        # Delta computation for temporal derivatives
+        if self.add_delta or self.add_delta_delta:
+            self.compute_deltas = T.ComputeDeltas()
+
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
         """
         Args:
             waveform: [batch, samples] or [samples]
         Returns:
-            mfcc: [batch, 1, n_mfcc, time_frames]
+            features: [batch, 1, n_features, time_frames]
+                     where n_features = n_mfcc * (1 + add_delta + add_delta_delta)
         """
         # Ensure we have [batch, samples] format
         if waveform.dim() == 1:
@@ -67,10 +76,31 @@ class MFCCExtractor(FeatureExtractor):
         # Compute MFCC - expects [batch, samples]
         mfcc = self.mfcc(waveform)  # [batch, n_mfcc, time]
 
-        # Add channel dimension for CNN compatibility
-        mfcc = mfcc.unsqueeze(1)  # [batch, 1, n_mfcc, time]
+        features = [mfcc]  # Start with base MFCC features
 
-        return mfcc
+        # Add delta features (first derivative)
+        if self.add_delta:
+            delta_mfcc = self.compute_deltas(mfcc)  # [batch, n_mfcc, time]
+            features.append(delta_mfcc)
+
+        # Add delta-delta features (second derivative)
+        if self.add_delta_delta:
+            if self.add_delta:
+                # Compute delta-delta from delta features
+                delta_delta_mfcc = self.compute_deltas(features[1])  # Use delta features
+            else:
+                # Compute delta first, then delta-delta
+                delta_mfcc = self.compute_deltas(mfcc)
+                delta_delta_mfcc = self.compute_deltas(delta_mfcc)
+            features.append(delta_delta_mfcc)
+
+        # Concatenate all features along the feature dimension
+        combined_features = torch.cat(features, dim=1)  # [batch, total_features, time]
+
+        # Add channel dimension for CNN compatibility
+        combined_features = combined_features.unsqueeze(1)  # [batch, 1, total_features, time]
+
+        return combined_features
 
 
 class MelSpectrogramExtractor(FeatureExtractor):

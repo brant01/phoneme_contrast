@@ -6,12 +6,12 @@ to speaker characteristics (gender, individual variations).
 """
 
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 import numpy as np
 from scipy import stats
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.metrics import accuracy_score, silhouette_score
+from sklearn.metrics import silhouette_score
 from sklearn.model_selection import cross_val_score
 from sklearn.svm import SVC
 
@@ -83,7 +83,9 @@ class SpeakerInvarianceAnalyzer:
             # Male → Female
             phoneme_clf = SVC(kernel="linear", random_state=self.random_state)
             phoneme_clf.fit(embeddings[male_mask], phoneme_labels[male_mask])
-            male_to_female_acc = phoneme_clf.score(embeddings[female_mask], phoneme_labels[female_mask])
+            male_to_female_acc = phoneme_clf.score(
+                embeddings[female_mask], phoneme_labels[female_mask]
+            )
 
             # Female → Male
             phoneme_clf = SVC(kernel="linear", random_state=self.random_state)
@@ -173,8 +175,8 @@ class SpeakerInvarianceAnalyzer:
 
         results["mean_within_phoneme_variance"] = np.mean(within_phoneme_variances)
         results["mean_between_phoneme_variance"] = np.mean(between_phoneme_variances)
-        results["variance_ratio"] = (
-            np.mean(between_phoneme_variances) / (np.mean(within_phoneme_variances) + 1e-10)
+        results["variance_ratio"] = np.mean(between_phoneme_variances) / (
+            np.mean(within_phoneme_variances) + 1e-10
         )
 
         return results
@@ -275,9 +277,7 @@ class SpeakerInvarianceAnalyzer:
 
         return results
 
-    def _hotellings_t2_test(
-        self, group1: np.ndarray, group2: np.ndarray
-    ) -> Tuple[float, float]:
+    def _hotellings_t2_test(self, group1: np.ndarray, group2: np.ndarray) -> Tuple[float, float]:
         """
         Perform Hotelling's T-squared test (multivariate t-test).
 

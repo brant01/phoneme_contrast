@@ -8,7 +8,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
 
-from src.datasets.dataset import PhonemeContrastiveDataset
+from src.datasets import PhonemeContrastiveDataset
 from src.datasets.features import build_feature_extractor
 from src.datasets.parser import parse_dataset
 from src.datasets.samplers import ContrastiveBatchSampler

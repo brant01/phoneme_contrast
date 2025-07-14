@@ -9,13 +9,12 @@ Provides rigorous statistical analysis including:
 """
 
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 from scipy import stats
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
-from sklearn.utils import resample
 
 
 class SignificanceTester:
@@ -117,7 +116,9 @@ class SignificanceTester:
             "significant": p_value < 0.05,
         }
 
-    def mcnemar_test(self, y_true: np.ndarray, pred1: np.ndarray, pred2: np.ndarray) -> Dict[str, float]:
+    def mcnemar_test(
+        self, y_true: np.ndarray, pred1: np.ndarray, pred2: np.ndarray
+    ) -> Dict[str, float]:
         """
         Perform McNemar's test to compare two classifiers.
 
@@ -189,7 +190,13 @@ class SignificanceTester:
         return d
 
     def analyze_cross_validation_stability(
-        self, X: np.ndarray, y: np.ndarray, model, cv_folds: int = 10, n_repeats: int = 10, cv_splitter=None
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        model,
+        cv_folds: int = 10,
+        n_repeats: int = 10,
+        cv_splitter=None,
     ) -> Dict[str, float]:
         """
         Analyze model stability across multiple CV runs.
@@ -210,11 +217,11 @@ class SignificanceTester:
 
         # Check if using LeaveOneOut
         from sklearn.model_selection import LeaveOneOut
-        
+
         if cv_splitter is not None and isinstance(cv_splitter, LeaveOneOut):
             # LeaveOneOut doesn't support multiple repeats
             n_repeats = 1
-            
+
         for repeat in range(n_repeats):
             if cv_splitter is not None:
                 cv = cv_splitter

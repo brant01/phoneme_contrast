@@ -9,11 +9,8 @@ from typing import Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import seaborn as sns
-from matplotlib.patches import Rectangle
 from scipy.cluster.hierarchy import dendrogram, linkage
-from sklearn.manifold import TSNE
 
 
 class PublicationVisualizer:
@@ -42,11 +39,11 @@ class PublicationVisualizer:
         """
         self.style = style
         self.logger = logging.getLogger(__name__)
-        
+
         # Apply style settings
         plt.style.use("seaborn-v0_8-whitegrid")
         plt.rcParams.update(self.STYLE_CONFIG)
-        
+
         # Adjust for different contexts
         if style == "presentation":
             plt.rcParams.update({"font.size": 14, "axes.labelsize": 14})
@@ -83,7 +80,7 @@ class PublicationVisualizer:
             # Create color map for features
             feature_colors = {}
             color_palette = sns.color_palette("husl", len(feature_groups))
-            
+
             for idx, (feature_name, phonemes) in enumerate(feature_groups.items()):
                 for phoneme in phonemes:
                     feature_colors[phoneme] = color_palette[idx]
@@ -99,7 +96,7 @@ class PublicationVisualizer:
                         label=feature_name,
                         alpha=0.7,
                         s=50,
-                        edgecolors='black',
+                        edgecolors="black",
                         linewidth=0.5,
                     )
         else:
@@ -108,10 +105,10 @@ class PublicationVisualizer:
                 embeddings[:, 0],
                 embeddings[:, 1],
                 c=labels,
-                cmap='tab20',
+                cmap="tab20",
                 alpha=0.7,
                 s=50,
-                edgecolors='black',
+                edgecolors="black",
                 linewidth=0.5,
             )
 
@@ -127,18 +124,18 @@ class PublicationVisualizer:
                     phoneme,
                     center,
                     fontsize=8,
-                    weight='bold',
-                    ha='center',
-                    va='center',
-                    bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7),
+                    weight="bold",
+                    ha="center",
+                    va="center",
+                    bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.7),
                 )
 
         ax.set_xlabel("t-SNE Dimension 1")
         ax.set_ylabel("t-SNE Dimension 2")
         ax.set_title(title)
-        
+
         if feature_groups:
-            ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+            ax.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
 
         plt.tight_layout()
         return fig
@@ -168,12 +165,12 @@ class PublicationVisualizer:
         models = []
         values = []
         errors = []
-        
+
         for model_name, results in results_dict.items():
             if metric in results:
                 models.append(model_name.replace("_", " ").title())
                 values.append(results[metric])
-                
+
                 # Try to get confidence interval or std
                 if f"{metric}_ci_lower" in results and f"{metric}_ci_upper" in results:
                     lower = results[f"{metric}_ci_lower"]
@@ -186,8 +183,13 @@ class PublicationVisualizer:
 
         # Create bar plot
         y_pos = np.arange(len(models))
-        bars = ax.barh(y_pos, values, xerr=errors if any(errors) else None, 
-                       capsize=5, color=sns.color_palette("husl", len(models)))
+        bars = ax.barh(
+            y_pos,
+            values,
+            xerr=errors if any(errors) else None,
+            capsize=5,
+            color=sns.color_palette("husl", len(models)),
+        )
 
         # Customize
         ax.set_yticks(y_pos)
@@ -197,8 +199,14 @@ class PublicationVisualizer:
 
         # Add value labels
         for i, (bar, value) in enumerate(zip(bars, values)):
-            ax.text(bar.get_width() + 0.01, bar.get_y() + bar.get_height()/2,
-                   f'{value:.3f}', ha='left', va='center', fontsize=8)
+            ax.text(
+                bar.get_width() + 0.01,
+                bar.get_y() + bar.get_height() / 2,
+                f"{value:.3f}",
+                ha="left",
+                va="center",
+                fontsize=8,
+            )
 
         # Set x-axis limits
         ax.set_xlim(0, max(values) * 1.15)
@@ -233,11 +241,11 @@ class PublicationVisualizer:
 
         # Normalize if requested
         if normalize:
-            cm = confusion_matrix.astype('float') / confusion_matrix.sum(axis=1)[:, np.newaxis]
-            fmt = '.2f'
+            cm = confusion_matrix.astype("float") / confusion_matrix.sum(axis=1)[:, np.newaxis]
+            fmt = ".2f"
         else:
             cm = confusion_matrix
-            fmt = 'd'
+            fmt = "d"
 
         # Create heatmap
         sns.heatmap(
@@ -301,8 +309,14 @@ class PublicationVisualizer:
 
         # Add value labels
         for i, (bar, score) in enumerate(zip(bars, scores)):
-            ax.text(bar.get_width() + 0.01, bar.get_y() + bar.get_height()/2,
-                   f'{score:.3f}', ha='left', va='center', fontsize=8)
+            ax.text(
+                bar.get_width() + 0.01,
+                bar.get_y() + bar.get_height() / 2,
+                f"{score:.3f}",
+                ha="left",
+                va="center",
+                fontsize=8,
+            )
 
         plt.tight_layout()
         return fig
@@ -330,13 +344,13 @@ class PublicationVisualizer:
         # 1. Gender classification accuracy (should be low)
         ax = axes[0, 0]
         gender_acc = invariance_results.get("gender_classification_accuracy", 0.5)
-        ax.bar(["Gender\nClassification", "Chance"], 
-               [gender_acc, 0.5],
-               color=['#e74c3c', '#95a5a6'])
+        ax.bar(
+            ["Gender\nClassification", "Chance"], [gender_acc, 0.5], color=["#e74c3c", "#95a5a6"]
+        )
         ax.set_ylabel("Accuracy")
         ax.set_title("Gender Classification from Embeddings")
         ax.set_ylim(0, 1)
-        ax.axhline(0.5, color='k', linestyle='--', alpha=0.5)
+        ax.axhline(0.5, color="k", linestyle="--", alpha=0.5)
 
         # 2. Cross-gender transfer
         ax = axes[0, 1]
@@ -345,7 +359,7 @@ class PublicationVisualizer:
                 invariance_results.get("cross_gender_accuracy_m2f", 0),
                 invariance_results.get("cross_gender_accuracy_f2m", 0),
             ]
-            ax.bar(["Male→Female", "Female→Male"], transfer_data, color='#3498db')
+            ax.bar(["Male→Female", "Female→Male"], transfer_data, color="#3498db")
             ax.set_ylabel("Accuracy")
             ax.set_title("Cross-Gender Transfer Learning")
             ax.set_ylim(0, 1)
@@ -354,29 +368,37 @@ class PublicationVisualizer:
         ax = axes[1, 0]
         within_dist = invariance_results.get("mean_within_phoneme_gender_distance", 0)
         between_dist = invariance_results.get("mean_between_phoneme_distance", 1)  # Placeholder
-        ax.bar(["Within-Phoneme\n(Different Gender)", "Between-Phoneme"],
-               [within_dist, between_dist],
-               color=['#2ecc71', '#e67e22'])
+        ax.bar(
+            ["Within-Phoneme\n(Different Gender)", "Between-Phoneme"],
+            [within_dist, between_dist],
+            color=["#2ecc71", "#e67e22"],
+        )
         ax.set_ylabel("Distance")
         ax.set_title("Embedding Distances")
 
         # 4. Summary metrics
         ax = axes[1, 1]
-        ax.axis('off')
-        
+        ax.axis("off")
+
         # Create summary text
         summary_text = "Summary Metrics:\n\n"
         summary_text += f"Gender Clustering Score: {invariance_results.get('gender_clustering_silhouette', 0):.3f}\n"
         summary_text += f"Variance Ratio: {invariance_results.get('variance_ratio', 0):.3f}\n"
-        
+
         if "gender_effect_p_value" in invariance_results:
             p_val = invariance_results["gender_effect_p_value"]
             sig = "Yes" if p_val < 0.05 else "No"
             summary_text += f"Gender Effect Significant: {sig} (p={p_val:.3f})"
-        
-        ax.text(0.1, 0.5, summary_text, transform=ax.transAxes,
-                fontsize=10, verticalalignment='center',
-                bbox=dict(boxstyle='round,pad=0.5', facecolor='lightgray', alpha=0.5))
+
+        ax.text(
+            0.1,
+            0.5,
+            summary_text,
+            transform=ax.transAxes,
+            fontsize=10,
+            verticalalignment="center",
+            bbox=dict(boxstyle="round,pad=0.5", facecolor="lightgray", alpha=0.5),
+        )
 
         plt.tight_layout()
         return fig
@@ -403,7 +425,7 @@ class PublicationVisualizer:
         fig, ax = plt.subplots(figsize=figsize)
 
         # Compute linkage
-        Z = linkage(embeddings, method='ward')
+        Z = linkage(embeddings, method="ward")
 
         # Create dendrogram
         dendrogram(
@@ -464,5 +486,5 @@ class PublicationVisualizer:
         """
         for fmt in formats:
             output_path = f"{filename}.{fmt}"
-            fig.savefig(output_path, dpi=dpi, bbox_inches='tight', format=fmt)
+            fig.savefig(output_path, dpi=dpi, bbox_inches="tight", format=fmt)
             self.logger.info(f"Saved figure: {output_path}")
